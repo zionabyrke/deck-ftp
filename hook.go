@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -23,14 +21,14 @@ var installHookCmd = &cobra.Command{
 		hookPath := filepath.Join(".git", "hooks", "post-commit")
 
 		if _, err := os.Stat(".git"); os.IsNotExist(err) {
-			log.Fatal("no .git directory found, run this from inside a git repo")
+			fail("no .git directory found, run this from inside a git repo")
 		}
 
 		if err := os.WriteFile(hookPath, []byte(hookScript), 0755); err != nil {
-			log.Fatalf("write hook: %v", err)
+			fail("write hook: %v", err)
 		}
 
-		fmt.Println("installed post-commit hook at", hookPath)
+		success("installed post-commit hook at %s", hookPath)
 	},
 }
 

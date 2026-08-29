@@ -72,7 +72,7 @@ classDiagram
     Manifest --> DiffResult
 ```
 
-## Flow — `deck push`
+## Flow - `deck push`
 
 ```mermaid
 sequenceDiagram
@@ -98,7 +98,7 @@ sequenceDiagram
     D-->>U: summary
 ```
 
-## Flow — auto trigger
+## Flow - auto trigger
 
 ```mermaid
 sequenceDiagram

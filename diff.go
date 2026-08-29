@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/spf13/cobra"
 )
 
@@ -13,27 +10,27 @@ var diffCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := loadConfig("deck.yaml")
 		if err != nil {
-			log.Fatalf("load config: %v", err)
+			fail("load config: %v", err)
 		}
 
 		diff, _, err := computeDiff(cfg)
 		if err != nil {
-			log.Fatalf("compute diff: %v", err)
+			fail("compute diff: %v", err)
 		}
 
 		if diff.isEmpty() {
-			fmt.Println("no changes")
+			warn("no changes")
 			return
 		}
 
 		for _, path := range diff.Added {
-			fmt.Println("+ " + path)
+			success("+ %s", path)
 		}
 		for _, path := range diff.Changed {
-			fmt.Println("~ " + path)
+			warn("~ %s", path)
 		}
 		for _, path := range diff.Deleted {
-			fmt.Println("- " + path)
+			errorColor.Printf("- %s\n", path)
 		}
 	},
 }

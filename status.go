@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/spf13/cobra"
 )
 
@@ -13,23 +10,23 @@ var statusCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := loadConfig("deck.yaml")
 		if err != nil {
-			log.Fatalf("load config: %v", err)
+			fail("load config: %v", err)
 		}
 
-		fmt.Println("local_dir:  " + cfg.LocalDir)
-		fmt.Println("remote_dir: " + cfg.RemoteDir)
+		successColor.Printf("local_dir:  %s\n", cfg.LocalDir)
+		successColor.Printf("remote_dir: %s\n", cfg.RemoteDir)
 
 		diff, _, err := computeDiff(cfg)
 		if err != nil {
-			log.Fatalf("compute diff: %v", err)
+			fail("compute diff: %v", err)
 		}
 
 		if diff.isEmpty() {
-			fmt.Println("status:     up to date")
+			success("status:     up to date")
 			return
 		}
 
-		fmt.Printf("status:     %d added, %d changed, %d deleted (run 'deck-ftp push' to deploy)\n",
+		warn("status:     %d added, %d changed, %d deleted (run 'deck-ftp push' to deploy)",
 			len(diff.Added), len(diff.Changed), len(diff.Deleted))
 	},
 }
