@@ -1,5 +1,8 @@
 # DECK
 ## Deploy Every Commit, Kontinuous
+![License](https://img.shields.io/github/license/zionabyrke/deck-ftp)
+![Go Version](https://img.shields.io/github/go-mod/go-version/zionabyrke/deck-ftp)
+![Status](https://img.shields.io/badge/status-prototype-orange)
 
 A small CLI for git commits and deploys changed files to hosts that have no built-in CI/CD, currently applied on InfinityFree using FTP
 
@@ -13,7 +16,7 @@ See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the UMLs
 
 ## Status
 
-Prototype v1. FTP only. Single host, single target. Local git hook trigger (no cloud CI yet — see roadmap in the architecture doc).
+Prototype v1. FTP only. Single host, single target. Local git hook trigger, no cloud CI yet (see roadmap in the [architecture doc](./ARCHITECTURE.md)).
 
 ## Install
 
@@ -67,4 +70,4 @@ Every file in `local_dir` is hashed (sha256). The hash set is compared against t
 
 ## Contributing
 
-Adapters beyond FTP (SFTP, cPanel API, S3) are the most useful thing to add next. Please see the `Adapter` interface in the architecture doc
+Adapters beyond FTP (SFTP, cPanel API, S3) are the most useful thing to add next. Please see the `Adapter` interface in the [architecture doc](./ARCHITECTURE.md)
