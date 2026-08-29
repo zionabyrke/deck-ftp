@@ -1,2 +1,2 @@
-local_file: spike-test.txt
-remote_file: htdocs/spike-test.txt
+local_dir: site
+remote_dir: htdocs

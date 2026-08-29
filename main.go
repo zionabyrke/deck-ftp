@@ -1,9 +1,13 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/jlaffaye/ftp"
 	"github.com/joho/godotenv"
@@ -11,8 +15,8 @@ import (
 )
 
 type Config struct {
-	LocalFile  string `yaml:"local_file"`
-	RemoteFile string `yaml:"remote_file"`
+	LocalDir  string `yaml:"local_dir"`
+	RemoteDir string `yaml:"remote_dir"`
 }
 
 func loadConfig(path string) (Config, error) {
@@ -28,6 +32,41 @@ func loadConfig(path string) (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func buildManifest(dir string) (map[string]string, error) {
+	manifest := make(map[string]string)
+
+	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		h := sha256.New()
+		if _, err := io.Copy(h, f); err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+		relPath = filepath.ToSlash(relPath)
+
+		manifest[relPath] = hex.EncodeToString(h.Sum(nil))
+		return nil
+	})
+
+	return manifest, err
 }
 
 func main() {
@@ -48,10 +87,6 @@ func main() {
 		log.Fatal("missing DECK_FTP_HOST, DECK_FTP_USER, or DECK_FTP_PASS")
 	}
 
-	if err := os.WriteFile(cfg.LocalFile, []byte("hello from DECK\n"), 0644); err != nil {
-		log.Fatalf("write local file: %v", err)
-	}
-
 	conn, err := ftp.Dial(host)
 	if err != nil {
 		log.Fatalf("dial: %v", err)
@@ -62,15 +97,26 @@ func main() {
 		log.Fatalf("login: %v", err)
 	}
 
-	file, err := os.Open(cfg.LocalFile)
+	manifest, err := buildManifest(cfg.LocalDir)
 	if err != nil {
-		log.Fatalf("open local file: %v", err)
-	}
-	defer file.Close()
-
-	if err := conn.Stor(cfg.RemoteFile, file); err != nil {
-		log.Fatalf("upload: %v", err)
+		log.Fatalf("build manifest: %v", err)
 	}
 
-	fmt.Println("uploaded", cfg.RemoteFile)
+	for relPath, hash := range manifest {
+		localPath := filepath.Join(cfg.LocalDir, relPath)
+		remotePath := cfg.RemoteDir + "/" + relPath
+
+		file, err := os.Open(localPath)
+		if err != nil {
+			log.Fatalf("open %s: %v", localPath, err)
+		}
+
+		if err := conn.Stor(remotePath, file); err != nil {
+			file.Close()
+			log.Fatalf("upload %s: %v", remotePath, err)
+		}
+		file.Close()
+
+		fmt.Printf("uploaded %s (%s)\n", remotePath, hash[:8])
+	}
 }
