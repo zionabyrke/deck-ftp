@@ -32,19 +32,12 @@ var pushCmd = &cobra.Command{
 			log.Fatal("missing DECK_FTP_HOST, DECK_FTP_USER, or DECK_FTP_PASS")
 		}
 
-		newManifest, err := buildManifest(cfg.LocalDir)
+		diff, newManifest, err := computeDiff(cfg)
 		if err != nil {
-			log.Fatalf("build manifest: %v", err)
+			log.Fatalf("compute diff: %v", err)
 		}
 
-		oldManifest, err := loadPreviousManifest(manifestPath)
-		if err != nil {
-			log.Fatalf("load previous manifest: %v", err)
-		}
-
-		diff := diffManifests(oldManifest, newManifest)
-
-		if len(diff.Added) == 0 && len(diff.Changed) == 0 && len(diff.Deleted) == 0 {
+		if diff.isEmpty() {
 			fmt.Println("nothing to deploy")
 			return
 		}

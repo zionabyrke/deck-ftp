@@ -105,6 +105,10 @@ type diffResult struct {
 	Deleted []string
 }
 
+func (d diffResult) isEmpty() bool {
+	return len(d.Added) == 0 && len(d.Changed) == 0 && len(d.Deleted) == 0
+}
+
 func diffManifests(oldM, newM map[string]string) diffResult {
 	var d diffResult
 
@@ -124,4 +128,21 @@ func diffManifests(oldM, newM map[string]string) diffResult {
 	}
 
 	return d
+}
+
+// computeDiff builds the current local manifest, loads the last saved one,
+// and returns what changed. Shared by both `push` and `diff` so the
+// comparison logic lives in exactly one place.
+func computeDiff(cfg Config) (diffResult, map[string]string, error) {
+	newManifest, err := buildManifest(cfg.LocalDir)
+	if err != nil {
+		return diffResult{}, nil, err
+	}
+
+	oldManifest, err := loadPreviousManifest(manifestPath)
+	if err != nil {
+		return diffResult{}, nil, err
+	}
+
+	return diffManifests(oldManifest, newManifest), newManifest, nil
 }
