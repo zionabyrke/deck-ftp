@@ -7,15 +7,40 @@ import (
 
 	"github.com/jlaffaye/ftp"
 	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v3"
 )
+
+type Config struct {
+	LocalFile  string `yaml:"local_file"`
+	RemoteFile string `yaml:"remote_file"`
+}
+
+func loadConfig(path string) (Config, error) {
+	var cfg Config
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return cfg, err
+	}
+
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return cfg, err
+	}
+
+	return cfg, nil
+}
 
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("no .env file found, falling back to real env vars")
 	}
 
+	cfg, err := loadConfig("deck.yaml")
+	if err != nil {
+		log.Fatalf("load config: %v", err)
+	}
+
 	host := os.Getenv("DECK_FTP_HOST")
-	// ... rest stays exactly the same
 	user := os.Getenv("DECK_FTP_USER")
 	pass := os.Getenv("DECK_FTP_PASS")
 
@@ -23,8 +48,7 @@ func main() {
 		log.Fatal("missing DECK_FTP_HOST, DECK_FTP_USER, or DECK_FTP_PASS")
 	}
 
-	localPath := "spike-test.txt"
-	if err := os.WriteFile(localPath, []byte("hello from DECK\n"), 0644); err != nil {
+	if err := os.WriteFile(cfg.LocalFile, []byte("hello from DECK\n"), 0644); err != nil {
 		log.Fatalf("write local file: %v", err)
 	}
 
@@ -38,16 +62,15 @@ func main() {
 		log.Fatalf("login: %v", err)
 	}
 
-	file, err := os.Open(localPath)
+	file, err := os.Open(cfg.LocalFile)
 	if err != nil {
 		log.Fatalf("open local file: %v", err)
 	}
 	defer file.Close()
 
-	remotePath := "htdocs/spike-test.txt"
-	if err := conn.Stor(remotePath, file); err != nil {
+	if err := conn.Stor(cfg.RemoteFile, file); err != nil {
 		log.Fatalf("upload: %v", err)
 	}
 
-	fmt.Println("uploaded", remotePath)
+	fmt.Println("uploaded", cfg.RemoteFile)
 }
